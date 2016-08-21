@@ -23,6 +23,7 @@
         "enableSounds": true,
         "invertIconViewColor": false,
         "moveOnResize": true,
+        "widgets": [],
         "hotkeys": {
           "WINDOW_MOVE_UP": "ALT+UP",
           "WINDOW_MOVE_DOWN": "ALT+DOWN",
