@@ -61,6 +61,7 @@
 
     this.scheme           = null;
     this.panels           = [];
+    this.widgets          = [];
     this.switcher         = null;
     this.iconView         = null;
     this.$themeLink       = null;
@@ -234,6 +235,7 @@
       self.initSwitcher();
       self.initDesktop();
       self.initPanels();
+      self.initWidgets();
       self.initIconView();
 
       initNotifications();
@@ -264,6 +266,8 @@
 
     // Reset
     this.destroyPanels();
+    this.destroyWidgets();
+
     var settings = this.importedSettings;
     try {
       settings.background = 'color';
@@ -288,6 +292,13 @@
       p.destroy();
     });
     this.panels = [];
+  };
+
+  CoreWM.prototype.destroyWidgets = function() {
+    this.widgets.forEach(function(w) {
+      w.destroy();
+    });
+    this.widgets = [];
   };
 
   // Copy from Application
@@ -433,6 +444,25 @@
     setTimeout(function() {
       self.setStyles(self._settings.get());
     }, 1000);
+  };
+
+  CoreWM.prototype.initWidgets = function(applySettings) {
+    this.destroyWidgets();
+
+    var widgets = [
+      {name: 'Clock', settings: {}}
+    ];
+
+    widgets.forEach(function(item) {
+      var settings = item.settings || {};
+      try {
+        var w = new OSjs.Applications.CoreWM.Widgets[item.name](settings);
+        w.init(document.body);
+        self.widgets.push(w);
+      } catch ( e ) {
+        console.warn('CoreWM::initWidgets()', e, e.stack);
+      }
+    });
   };
 
   CoreWM.prototype.initIconView = function() {
@@ -880,6 +910,8 @@
 
     if ( save ) {
       this.initPanels(true);
+      this.initWidgets(true);
+
       if ( settings ) {
         if ( settings.language ) {
           OSjs.Core.getSettingsManager().set('Core', 'Locale', settings.language, triggerWatch);
