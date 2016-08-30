@@ -43,16 +43,17 @@
   // PANELS
   /////////////////////////////////////////////////////////////////////////////
 
-  function Widget(name, options, wm) {
+  function Widget(name, options, settings) {
     options = options || {};
 
     this._name = name;
-    this._options = new OSjs.Helpers.SettingsFragment(options, 'CoreWM/' + name);
+    this._options = options || {};
+    this._settings = new OSjs.Helpers.SettingsFragment(options, 'CoreWM/Widget/' + name);
     this._$element = null;
     this._$canvas = null;
     this._$context = null
 
-    console.debug('Widget::construct()', this._name, this._options.get());
+    console.debug('Widget::construct()', this._name, this._settings.get());
   }
 
   Widget.prototype.init = function(root, isCanvas) {
@@ -60,13 +61,18 @@
 
     if ( isCanvas ) {
       this._$canvas = document.createElement('canvas');
-      this._$canvas.width = '100%';
-      this._$canvas.height = '100%;';
-      this._$context = this._$canvas.createContext('2d');
+      this._$canvas.width = (this._options.width || 32);
+      this._$canvas.height = (this._options.height || 32);
+      this._$context = this._$canvas.getContext('2d');
       this._$element.appendChild(this._$canvas);
     }
 
     root.appendChild(this._$element);
+
+    return this._$element;
+  };
+
+  Widget.prototype.inited = function() {
   };
 
   Widget.prototype.destroy = function() {
@@ -79,8 +85,7 @@
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.Applications               = OSjs.Applications || {};
-  OSjs.Applications.CoreWM        = OSjs.Applications.CoreWM || {};
+  OSjs.Applications.CoreWM = OSjs.Applications.CoreWM || {};
   OSjs.Applications.CoreWM.Widget = Widget;
 
 })(OSjs.Core.WindowManager, OSjs.Core.Window, OSjs.GUI, OSjs.Utils, OSjs.API, OSjs.VFS);
