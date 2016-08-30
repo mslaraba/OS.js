@@ -70,6 +70,10 @@
       "type": "javascript"
     },
     {
+      "src": "widgets/clock.js",
+      "type": "javascript"
+    },
+    {
       "src": "main.js",
       "type": "javascript"
     },
