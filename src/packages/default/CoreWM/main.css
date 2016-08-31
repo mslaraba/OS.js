@@ -216,6 +216,7 @@ corewm-widget {
   min-height : 32px;
 }
   corewm-widget > canvas {
+    pointer-events : none;
     box-sizing : border-box;
     width : 100%;
     height : 100%;
@@ -223,6 +224,35 @@ corewm-widget {
     margin : 0;
     padding : 0;
   }
+
+  corewm-widget-resize {
+    width : 10px;
+    height : 10px;
+    display : none;
+    margin : 0;
+    padding : 0;
+    position : absolute;
+    bottom : 0;
+    right : 0;
+    pointer : resize;
+    background : #000;
+    z-index : 5;
+  }
+
+corewm-widget.corewm-widget-envelope {
+  outline : 1px solid #000;
+}
+corewm-widget.corewm-widget-active {
+  outline : 1px solid #fff;
+}
+
+corewm-widget.corewm-widget-active corewm-widget-resize,
+corewm-widget.corewm-widget-envelope corewm-widget-resize {
+  display : block;
+}
+corewm-widget.corewm-widget-active corewm-widget-resize {
+  background-color : #fff;
+}
 
 /**
  * ===========================================================================

@@ -40,25 +40,30 @@
   function WidgetClock(settings) {
     Widget.call(this, 'Clock', {
       width: 300,
-      height: 300
+      height: 300,
+      aspect: 1,
+      top: 100,
+      right: 20,
+      frequency: 1
     }, settings);
-
-    this.interval = null;
   }
 
   WidgetClock.prototype = Object.create(Widget.prototype);
   WidgetClock.constructor = Widget;
 
   WidgetClock.prototype.init = function() {
-    this.interval = clearInterval(this.interval);
-
     return Widget.prototype.destroy.call(this);
   };
 
   WidgetClock.prototype.init = function(root) {
     var element = Widget.prototype.init.call(this, root, true);
-    element.style.top = '100px';
-    element.style.right = '20px';
+    return element;
+  };
+
+  WidgetClock.prototype.onRender = function() {
+    if ( !this._$canvas ) {
+      return;
+    }
 
     var canvas = this._$canvas;
     var ctx = this._$context;
@@ -125,25 +130,27 @@
       drawHand(ctx, second, radius * 0.9, radius * 0.02);
     }
 
-    function drawClock() {
-      drawFace(ctx, radius);
-      drawNumbers(ctx, radius);
-      drawTime(ctx, radius);
+    radius = (canvas.height / 2) * 0.9;
+    drawFace(ctx, radius);
+    drawNumbers(ctx, radius);
+    drawTime(ctx, radius);
+  };
+
+  WidgetClock.prototype.onResize = function() {
+    if ( !this._$canvas ) {
+      return;
     }
 
-    ctx.translate(radius, radius);
-    radius = radius * 0.90
-    this.interval = setInterval(drawClock, 1000);
-
-    return element;
+    var radius = Math.round(this._$canvas.height / 2);
+    this._$context.translate(radius, radius);
   };
 
   /////////////////////////////////////////////////////////////////////////////
   // EXPORTS
   /////////////////////////////////////////////////////////////////////////////
 
-  OSjs.Applications.CoreWM  =  OSjs.Applications.CoreWM || {};
-  OSjs.Applications.CoreWM.Widgets  =  OSjs.Applications.CoreWM.Widgets || {};
-  OSjs.Applications.CoreWM.Widgets.Clock  =  WidgetClock;
+  OSjs.Applications.CoreWM = OSjs.Applications.CoreWM || {};
+  OSjs.Applications.CoreWM.Widgets = OSjs.Applications.CoreWM.Widgets || {};
+  OSjs.Applications.CoreWM.Widgets.Clock = WidgetClock;
 
 })(OSjs.Applications.CoreWM.Widget, OSjs.Utils, OSjs.API, OSjs.VFS, OSjs.GUI, OSjs.Core.Window);
