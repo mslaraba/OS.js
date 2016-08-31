@@ -32,10 +32,12 @@
 
   var defaultOptions = {
     aspect: 0,
-    minWidth: 100,
-    maxWidth: 500,
-    minHeight: 100,
+    width: 100,
+    height: 100,
+    minWidth: 32,
+    minHeight: 32,
     maxHeight: 500,
+    maxWidth: 500,
     left: -1,
     right: -1,
     frequency: 2
@@ -114,30 +116,31 @@
   // PANELS
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Set right position based on which "side of screen"
+  // TODO: Behave according to orientation
 
   function Widget(name, options, settings) {
     options = options || {};
 
+    var rset = new OSjs.Helpers.SettingsFragment(settings, 'CoreWM/Widget/' + name); // TODO
+    var ropts = options || {};
+
     this._name = name;
-    this._options = Utils.mergeObject(defaultOptions, options || {});
-    this._settings = new OSjs.Helpers.SettingsFragment(options, 'CoreWM/Widget/' + name);
+    this._settings = rset;
+    this._options = Utils.mergeObject(defaultOptions, ropts);
     this._$element = null;
     this._$resize = null;
     this._$canvas = null;
     this._$context = null
-    this._showUnderlay = false;
     this._isManipulating = false;
     this._resizeTimeout = null;
     this._windowWidth = window.innerWidth;
     this._requestId = null;
+    this._saveTimeout = null;
 
     console.debug('Widget::construct()', this._name, this._settings.get());
   }
 
   Widget.prototype.init = function(root, isCanvas) {
-    var self = this;
-
     this._windowWidth = window.innerWidth;
     this._$element = document.createElement('corewm-widget');
     this._$resize = document.createElement('corewm-widget-resize');
@@ -152,7 +155,21 @@
 
     bindWidgetEvents(this);
 
-    var fps = this._options.frequency;
+    this._updatePosition();
+    this._updateDimension();
+
+    this._$element.appendChild(this._$resize);
+    root.appendChild(this._$element);
+
+    return this._$element;
+  };
+
+  Widget.prototype._inited = function() {
+    var self = this;
+
+    this.onInited();
+    this.onResize();
+
     var fpsInterval, startTime, now, then, elapsed;
 
     function animate() {
@@ -167,7 +184,9 @@
       }
     }
 
-    if ( isCanvas ) {
+    if ( this._$canvas ) {
+      var fps = Math.min(this._options.frequency, 1);
+
       this._requestId = window.requestAnimationFrame(function() {
         fpsInterval = 1000 / fps;
         then = Date.now();
@@ -176,16 +195,6 @@
         animate();
       });
     }
-
-    this._updatePosition();
-    this._updateDimension();
-
-    this._$element.appendChild(this._$resize);
-    root.appendChild(this._$element);
-
-    this.onResize();
-
-    return this._$element;
   };
 
   Widget.prototype.destroy = function() {
@@ -198,6 +207,7 @@
     Utils.$unbind(this._$element, 'mouseout:hideenvelope');
 
     this._resizeTimeout = clearTimeout(this._resizeTimeout);
+    this._saveTimeout = clearTimeout(this._saveTimeout);
 
     if ( this._requestId ) {
       window.cancelAnimationFrame(this._requestId);
@@ -223,9 +233,19 @@
     if ( action === 'move' ) {
       this._options.left = obj.x;
       this._options.top = obj.y;
-      this._options.right = null; // FIXME
+      this._options.right = null; // Temporarily remove this FIXME ?
 
-      this._updatePosition();
+      this._updatePosition(true);
+
+      // Convert left to right position if we passed half the screen
+      var half = this._windowWidth / 2;
+      var aleft = this._options.left + (this._options.width / 2);
+
+      if ( aleft >= half ) {
+        var right = this._windowWidth - (this._options.left + this._options.width);
+        this._options.left = null;
+        this._options.right = right;
+      }
     } else {
       this._options.width = obj.w;
       this._options.height = obj.h;
@@ -239,21 +259,36 @@
   };
 
   Widget.prototype._onMouseUp = function(ev, pos, action) {
+    var self = this;
+
     this._isManipulating = false;
     this._resizeTimeout = clearTimeout(this._resizeTimeout);
 
     Utils.$removeClass(this._$element, 'corewm-widget-active');
 
     this._hideEnvelope();
+
+    this._saveTimeout = clearTimeout(this._saveTimeout);
+    this._saveTimeout = setTimeout(function() {
+      self._saveOptions();
+    }, 1000);
+  };
+
+  Widget.prototype._saveOptions = function() {
+    var opts = {
+      left: this._options.left,
+      top: this._options.top,
+      width: this._options.width,
+      height: this._options.height
+    };
+
+    //this._settings.set(null, opts, true); // TODO
   };
 
   Widget.prototype._showEnvelope = function() {
     if ( !this._$element ) {
       return;
     }
-
-    this._showUnderlay = true;
-
     Utils.$addClass(this._$element, 'corewm-widget-envelope');
   };
 
@@ -261,9 +296,6 @@
     if ( !this._$element || this._isManipulating ) {
       return;
     }
-
-    this._showUnderlay = false;
-
     Utils.$removeClass(this._$element, 'corewm-widget-envelope');
   };
 
@@ -276,14 +308,18 @@
   };
 
   Widget.prototype._updateDimension = function() {
+    var o = this._options;
+    var w = Math.min(Math.max(o.width, o.minWidth), o.maxWidth);
+    var h = Math.min(Math.max(o.height, o.minHeight), o.maxHeight);
+
     if ( this._$element ) {
-      this._$element.style.width = String(this._options.width) + 'px';
-      this._$element.style.height = String(this._options.height) + 'px';
+      this._$element.style.width = String(w) + 'px';
+      this._$element.style.height = String(h) + 'px';
     }
 
     if ( this._$canvas ) {
-      this._$canvas.width = this._options.width;
-      this._$canvas.height = this._options.height;
+      this._$canvas.width = w;
+      this._$canvas.height = h;
     }
   };
 
@@ -292,13 +328,20 @@
     if ( this._options.right ) {
       left = this._windowWidth - this._options.right - this._options.width;
     }
+
     return {x: left, y: this._options.top};
   };
 
   Widget.prototype.onResize = function() {
+    // Implement in your widget
   };
 
   Widget.prototype.onRender = function() {
+    // Implement in your widget
+  };
+
+  Widget.prototype.onInited = function() {
+    // Implement in your widget
   };
 
   /////////////////////////////////////////////////////////////////////////////

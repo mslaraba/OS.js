@@ -461,6 +461,8 @@
         var w = new OSjs.Applications.CoreWM.Widgets[item.name](settings);
         w.init(document.body);
         self.widgets.push(w);
+
+        w._inited();
       } catch ( e ) {
         console.warn('CoreWM::initWidgets()', e, e.stack);
       }

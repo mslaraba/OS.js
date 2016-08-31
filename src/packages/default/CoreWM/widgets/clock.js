@@ -56,8 +56,7 @@
   };
 
   WidgetClock.prototype.init = function(root) {
-    var element = Widget.prototype.init.call(this, root, true);
-    return element;
+    return Widget.prototype.init.call(this, root, true);
   };
 
   WidgetClock.prototype.onRender = function() {
