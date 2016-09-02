@@ -126,8 +126,6 @@
       options[k] = s[k];
     });
 
-    console.warn('xx', options);
-
     this._name = name;
     this._settings = settings;
     this._options = options;
