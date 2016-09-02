@@ -30,18 +30,34 @@
 (function(WindowManager, Window, GUI, Utils, API, VFS) {
   'use strict';
 
+  /////////////////////////////////////////////////////////////////////////////
+  // DEFAULTS
+  /////////////////////////////////////////////////////////////////////////////
+
+  var MIN_WIDTH = 32;
+  var MIN_HEIGHT = 32;
+
+  var TIMEOUT_SAVE = 500;
+  var TIMEOUT_RESIZE = 50;
+  var TIMEOUT_SHOW_ENVELOPE = 3000;
+  var TIMEOUT_HIDE_ENVELOPE = 1000;
+
   var defaultOptions = {
-    aspect: 0,
+    aspect: 0, // 0 = no aspect, 1 = square
     width: 100,
     height: 100,
-    minWidth: 32,
-    minHeight: 32,
+    minWidth: MIN_WIDTH,
+    minHeight: MIN_HEIGHT,
     maxHeight: 500,
     maxWidth: 500,
     left: -1,
     right: -1,
-    frequency: 2
+    frequency: 2 // FPS for canvas
   };
+
+  /////////////////////////////////////////////////////////////////////////////
+  // HELPERS
+  /////////////////////////////////////////////////////////////////////////////
 
   function bindWidgetEvents(instance) {
     var timeout = null;
@@ -102,22 +118,29 @@
       timeout = clearTimeout(timeout);
       timeout = setTimeout(function() {
         instance._showEnvelope();
-      }, 3000);
+      }, TIMEOUT_SHOW_ENVELOPE);
     });
     Utils.$bind(instance._$element, 'mouseout:hideenvelope', function(ev) {
       timeout = clearTimeout(timeout);
       timeout = setTimeout(function() {
         instance._hideEnvelope();
-      }, 1000);
+      }, TIMEOUT_HIDE_ENVELOPE);
     });
   }
 
   /////////////////////////////////////////////////////////////////////////////
-  // PANELS
+  // WIDGET
   /////////////////////////////////////////////////////////////////////////////
 
-  // TODO: Behave according to orientation
-
+  /**
+   * A CoreWM Widget
+   *
+   * TODO: Behave according to orientation
+   *
+   * @param   {String}                          name      Widget Name
+   * @param   {Object}                          options   Widget Options
+   * @param   {OSjs.Helpers.SettingsFragment}   settings  SettingsFragment instance
+   */
   function Widget(name, options, settings) {
     options = Utils.mergeObject(defaultOptions, options || {});
 
@@ -142,6 +165,14 @@
     console.debug('Widget::construct()', this._name, this._settings.get());
   }
 
+  /**
+   * When Widget is initialized
+   *
+   * @param {Node}      root          The DOM Node to append Widget to
+   * @param {Boolean}   [isCanvas]    If this element is a canvas Widget
+   *
+   * @return {Node}                   The created DOM Node containing Widget
+   */
   Widget.prototype.init = function(root, isCanvas) {
     this._windowWidth = window.innerWidth;
     this._$element = document.createElement('corewm-widget');
@@ -149,8 +180,8 @@
 
     if ( isCanvas ) {
       this._$canvas = document.createElement('canvas');
-      this._$canvas.width = (this._options.width || 32);
-      this._$canvas.height = (this._options.height || 32);
+      this._$canvas.width = (this._options.width || MIN_WIDTH);
+      this._$canvas.height = (this._options.height || MIN_HEIGHT);
       this._$context = this._$canvas.getContext('2d');
       this._$element.appendChild(this._$canvas);
     }
@@ -166,6 +197,9 @@
     return this._$element;
   };
 
+  /**
+   * When widget has been rendered to DOM and added in WindowManager
+   */
   Widget.prototype._inited = function() {
     var self = this;
 
@@ -199,6 +233,9 @@
     }
   };
 
+  /**
+   * When WindowManager requests destruction of Widget
+   */
   Widget.prototype.destroy = function() {
     Utils.$unbind(window, 'mousemove:modifywidget');
     Utils.$unbind(window, 'mouseup:modifywidget');
@@ -222,10 +259,16 @@
     this._$context = null;
   };
 
+  /**
+   * When mouse is pressed
+   */
   Widget.prototype._onMouseDown = function(ev, pos, action) {
     Utils.$addClass(this._$element, 'corewm-widget-active');
   };
 
+  /**
+   * When mouse is moved after pressing
+   */
   Widget.prototype._onMouseMove = function(ev, obj, action) {
     var self = this;
 
@@ -256,10 +299,13 @@
 
       this._resizeTimeout = setTimeout(function() {
         self.onResize();
-      }, 50);
+      }, TIMEOUT_RESIZE);
     }
   };
 
+  /**
+   * When mouse has been released
+   */
   Widget.prototype._onMouseUp = function(ev, pos, action) {
     var self = this;
 
@@ -273,9 +319,12 @@
     this._saveTimeout = clearTimeout(this._saveTimeout);
     this._saveTimeout = setTimeout(function() {
       self._saveOptions();
-    }, 500);
+    }, TIMEOUT_SAVE);
   };
 
+  /**
+   * Saves this Widgets settings to CoreWM
+   */
   Widget.prototype._saveOptions = function() {
     var opts = {
       left: null,
@@ -294,6 +343,9 @@
     this._settings.set(null, opts, true);
   };
 
+  /**
+   * Show the envelope containing this Widget
+   */
   Widget.prototype._showEnvelope = function() {
     if ( !this._$element ) {
       return;
@@ -301,6 +353,9 @@
     Utils.$addClass(this._$element, 'corewm-widget-envelope');
   };
 
+  /**
+   * Hide the envelope containing this Widget
+   */
   Widget.prototype._hideEnvelope = function() {
     if ( !this._$element || this._isManipulating ) {
       return;
@@ -308,6 +363,9 @@
     Utils.$removeClass(this._$element, 'corewm-widget-envelope');
   };
 
+  /**
+   * Updates the Widgets position based on internal options
+   */
   Widget.prototype._updatePosition = function() {
     if ( this._$element ) {
       var p = this._getNormalizedPosition();
@@ -316,6 +374,9 @@
     }
   };
 
+  /**
+   * Updates the Widgets dimensions based on internal options
+   */
   Widget.prototype._updateDimension = function() {
     var o = this._options;
     var w = Math.min(Math.max(o.width, o.minWidth), o.maxWidth);
@@ -332,6 +393,9 @@
     }
   };
 
+  /**
+   * Gets the position of the Widget
+   */
   Widget.prototype._getNormalizedPosition = function() {
     var left = this._options.left;
     if ( this._options.right ) {
@@ -341,14 +405,23 @@
     return {x: left, y: this._options.top};
   };
 
+  /**
+   * When Widget is being resized
+   */
   Widget.prototype.onResize = function() {
     // Implement in your widget
   };
 
+  /**
+   * When Widget is being rendered
+   */
   Widget.prototype.onRender = function() {
     // Implement in your widget
   };
 
+  /**
+   * When Widget has been initialized
+   */
   Widget.prototype.onInited = function() {
     // Implement in your widget
   };
