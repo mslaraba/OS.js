@@ -119,14 +119,18 @@
   // TODO: Behave according to orientation
 
   function Widget(name, options, settings) {
-    options = options || {};
+    options = Utils.mergeObject(defaultOptions, options || {});
 
-    var rset = new OSjs.Helpers.SettingsFragment(settings, 'CoreWM/Widget/' + name); // TODO
-    var ropts = options || {};
+    var s = settings.get();
+    Object.keys(s).forEach(function(k) {
+      options[k] = s[k];
+    });
+
+    console.warn('xx', options);
 
     this._name = name;
-    this._settings = rset;
-    this._options = Utils.mergeObject(defaultOptions, ropts);
+    this._settings = settings;
+    this._options = options;
     this._$element = null;
     this._$resize = null;
     this._$canvas = null;
@@ -271,18 +275,25 @@
     this._saveTimeout = clearTimeout(this._saveTimeout);
     this._saveTimeout = setTimeout(function() {
       self._saveOptions();
-    }, 1000);
+    }, 500);
   };
 
   Widget.prototype._saveOptions = function() {
     var opts = {
-      left: this._options.left,
+      left: null,
+      right: null,
       top: this._options.top,
       width: this._options.width,
       height: this._options.height
     };
 
-    //this._settings.set(null, opts, true); // TODO
+    if ( this._options.right ) {
+      opts.right = this._options.right;
+    } else {
+      opts.left = this._options.left;
+    }
+
+    this._settings.set(null, opts, true);
   };
 
   Widget.prototype._showEnvelope = function() {

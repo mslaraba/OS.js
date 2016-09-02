@@ -372,11 +372,7 @@
       this.destroyPanels();
 
       (ps || []).forEach(function(storedItem) {
-        if ( !storedItem.options ) {
-          storedItem.options = {};
-        }
-
-        var panelSettings = new OSjs.Helpers.SettingsFragment(storedItem.options, 'CoreWM');
+        var panelSettings = new OSjs.Helpers.SettingsFragment(storedItem.options || {}, 'CoreWM');
         var p = new OSjs.Applications.CoreWM.Panel('Default', panelSettings, self);
         p.init(document.body);
 
@@ -451,12 +447,11 @@
 
     this.destroyWidgets();
 
-    var widgets = [
-      {name: 'Clock', settings: {}}
-    ];
+    var widgets = this.getSetting('widgets');
 
-    widgets.forEach(function(item) {
-      var settings = item.settings || {};
+    (widgets || []).forEach(function(item) {
+      var settings = new OSjs.Helpers.SettingsFragment(item.settings || {}, 'CoreWM');
+
       try {
         var w = new OSjs.Applications.CoreWM.Widgets[item.name](settings);
         w.init(document.body);

@@ -23,7 +23,12 @@
         "enableSounds": true,
         "invertIconViewColor": false,
         "moveOnResize": true,
-        "widgets": [],
+        "widgets": [
+          {
+            "name": "Clock",
+            "settings": {}
+          }
+        ],
         "hotkeys": {
           "WINDOW_MOVE_UP": "ALT+UP",
           "WINDOW_MOVE_DOWN": "ALT+DOWN",
