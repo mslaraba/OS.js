@@ -42,7 +42,7 @@
   var TIMEOUT_SHOW_ENVELOPE = 3000;
   var TIMEOUT_HIDE_ENVELOPE = 1000;
 
-  var defaultOptions = {
+  var DEFAULT_OPTIONS = {
     aspect: 0, // 0 = no aspect, 1 = square
     width: 100,
     height: 100,
@@ -52,6 +52,7 @@
     maxWidth: 500,
     left: -1,
     right: -1,
+    canvas: false,
     frequency: 2 // FPS for canvas
   };
 
@@ -135,6 +136,7 @@
   /**
    * A CoreWM Widget
    *
+   * TODO: Respect bottom position (just as 'right')
    * TODO: Behave according to orientation
    *
    * @param   {String}                          name      Widget Name
@@ -142,7 +144,7 @@
    * @param   {OSjs.Helpers.SettingsFragment}   settings  SettingsFragment instance
    */
   function Widget(name, options, settings) {
-    options = Utils.mergeObject(defaultOptions, options || {});
+    options = Utils.mergeObject(DEFAULT_OPTIONS, options || {});
 
     var s = settings.get();
     Object.keys(s).forEach(function(k) {
@@ -169,16 +171,15 @@
    * When Widget is initialized
    *
    * @param {Node}      root          The DOM Node to append Widget to
-   * @param {Boolean}   [isCanvas]    If this element is a canvas Widget
    *
    * @return {Node}                   The created DOM Node containing Widget
    */
-  Widget.prototype.init = function(root, isCanvas) {
+  Widget.prototype.init = function(root) {
     this._windowWidth = window.innerWidth;
     this._$element = document.createElement('corewm-widget');
     this._$resize = document.createElement('corewm-widget-resize');
 
-    if ( isCanvas ) {
+    if ( this._options.canvas ) {
       this._$canvas = document.createElement('canvas');
       this._$canvas.width = (this._options.width || MIN_WIDTH);
       this._$canvas.height = (this._options.height || MIN_HEIGHT);

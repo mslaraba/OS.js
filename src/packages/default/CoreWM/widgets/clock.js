@@ -44,6 +44,7 @@
       aspect: 1,
       top: 100,
       right: 20,
+      canvas: true,
       frequency: 1
     }, settings);
   }
@@ -51,12 +52,12 @@
   WidgetClock.prototype = Object.create(Widget.prototype);
   WidgetClock.constructor = Widget;
 
-  WidgetClock.prototype.init = function() {
-    return Widget.prototype.destroy.call(this);
+  WidgetClock.prototype.init = function(root) {
+    return Widget.prototype.init.apply(this, arguments);
   };
 
-  WidgetClock.prototype.init = function(root) {
-    return Widget.prototype.init.call(this, root, true);
+  WidgetClock.prototype.destroy = function(root) {
+    return Widget.prototype.destroy.apply(this, arguments);
   };
 
   WidgetClock.prototype.onRender = function() {
