@@ -469,6 +469,6 @@
   /////////////////////////////////////////////////////////////////////////////
 
   OSjs.Applications.CoreWM = OSjs.Applications.CoreWM || {};
-  OSjs.Applications.CoreWM.Widget = Widget;
+  OSjs.Applications.CoreWM.Widget = Object.freeze(Widget);
 
 })(OSjs.Core.Window, OSjs.GUI, OSjs.Utils, OSjs.API, OSjs.VFS);
