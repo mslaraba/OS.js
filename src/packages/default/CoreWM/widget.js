@@ -313,7 +313,6 @@
         var bottom = this._windowHeight - (this._options.top + this._options.height);
         this._options.top = null;
         this._options.bottom = bottom;
-        console.warn(bottom);
       }
     } else {
       this._options.width = obj.w;
@@ -366,8 +365,6 @@
     } else {
       opts.top = this._options.top;
     }
-
-    console.warn(opts);
 
     this._settings.set(null, opts, true);
   };
