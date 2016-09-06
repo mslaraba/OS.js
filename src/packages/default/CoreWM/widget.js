@@ -150,6 +150,13 @@
   function Widget(name, options, settings) {
     options = Utils.mergeObject(DEFAULT_OPTIONS, options || {});
 
+    if ( options.viewBox ) {
+      options.resizable = true;
+      if ( options.viewBox === true ) {
+        options.viewBox = '0 0 ' + options.width + ' ' + options.height;
+      }
+    }
+
     var s = settings.get();
     Object.keys(s).forEach(function(k) {
       options[k] = s[k];
@@ -189,6 +196,11 @@
       this._$canvas = document.createElement('canvas');
       this._$canvas.width = (this._options.width || MIN_WIDTH);
       this._$canvas.height = (this._options.height || MIN_HEIGHT);
+
+      if ( this._options.viewBox ) {
+        this._$canvas.setAttribute('viewBox', this._options.viewBox);
+      }
+
       this._$context = this._$canvas.getContext('2d');
       this._$element.appendChild(this._$canvas);
     }
@@ -283,12 +295,7 @@
     this._resizeTimeout = clearTimeout(this._resizeTimeout);
 
     if ( action === 'move' ) {
-      this._options.left = obj.x;
-      this._options.top = obj.y;
-      this._options.right = null; // Temporarily remove this FIXME ?
-      this._options.bottom = null; // Temporarily remove this FIXME ?
-
-      this._updatePosition(true);
+      this._updatePosition(obj);
 
       // Convert left to right position if we passed half the screen
       var hleft = this._windowWidth / 2;
@@ -306,6 +313,7 @@
         var bottom = this._windowHeight - (this._options.top + this._options.height);
         this._options.top = null;
         this._options.bottom = bottom;
+        console.warn(bottom);
       }
     } else {
       this._options.width = obj.w;
@@ -343,10 +351,6 @@
    */
   Widget.prototype._saveOptions = function() {
     var opts = {
-      left: null,
-      right: null,
-      bottom: null,
-      top: this._options.top,
       width: this._options.width,
       height: this._options.height
     };
@@ -362,6 +366,8 @@
     } else {
       opts.top = this._options.top;
     }
+
+    console.warn(opts);
 
     this._settings.set(null, opts, true);
   };
@@ -389,11 +395,18 @@
   /**
    * Updates the Widgets position based on internal options
    */
-  Widget.prototype._updatePosition = function() {
+  Widget.prototype._updatePosition = function(obj) {
     if ( this._$element ) {
-      var p = this._getNormalizedPosition();
+      var p = obj || this._getNormalizedPosition();
       this._$element.style.left = String(p.x) + 'px';
       this._$element.style.top = String(p.y) + 'px';
+    }
+
+    if ( obj ) {
+      this._options.right = null;
+      this._options.bottom = null;
+      this._options.left = obj.x;
+      this._options.top = obj.y;
     }
   };
 

@@ -45,7 +45,9 @@
       top: 100,
       right: 20,
       canvas: true,
-      frequency: 1
+      frequency: 1,
+      resizable: true,
+      viewBox: true
     }, settings);
   }
 
