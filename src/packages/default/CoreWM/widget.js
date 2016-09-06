@@ -27,7 +27,7 @@
  * @author  Anders Evenrud <andersevenrud@gmail.com>
  * @licence Simplified BSD License
  */
-(function(WindowManager, Window, GUI, Utils, API, VFS) {
+(function(Window, GUI, Utils, API, VFS) {
   'use strict';
 
   /////////////////////////////////////////////////////////////////////////////
@@ -52,7 +52,11 @@
     maxWidth: 500,
     left: -1,
     right: -1,
+    top: 0,
+    bottom: 0,
     canvas: false,
+    resizable: false,
+    viewBox: false, // x y w h or 'true'
     frequency: 2 // FPS for canvas
   };
 
@@ -98,6 +102,7 @@
       dimension = {w: instance._options.width, h: instance._options.height};
 
       instance._windowWidth = window.innerWidth;
+      instance._windowHeight = window.innerHeight;
 
       _bindWindow(action);
       instance._onMouseDown(ev, pos, action);
@@ -136,7 +141,6 @@
   /**
    * A CoreWM Widget
    *
-   * TODO: Respect bottom position (just as 'right')
    * TODO: Behave according to orientation
    *
    * @param   {String}                          name      Widget Name
@@ -161,6 +165,7 @@
     this._isManipulating = false;
     this._resizeTimeout = null;
     this._windowWidth = window.innerWidth;
+    this._windowHeight = window.innerHeight;
     this._requestId = null;
     this._saveTimeout = null;
 
@@ -176,6 +181,7 @@
    */
   Widget.prototype.init = function(root) {
     this._windowWidth = window.innerWidth;
+    this._windowHeight = window.innerHeight;
     this._$element = document.createElement('corewm-widget');
     this._$resize = document.createElement('corewm-widget-resize');
 
@@ -280,17 +286,26 @@
       this._options.left = obj.x;
       this._options.top = obj.y;
       this._options.right = null; // Temporarily remove this FIXME ?
+      this._options.bottom = null; // Temporarily remove this FIXME ?
 
       this._updatePosition(true);
 
       // Convert left to right position if we passed half the screen
-      var half = this._windowWidth / 2;
+      var hleft = this._windowWidth / 2;
+      var htop = this._windowHeight / 2;
       var aleft = this._options.left + (this._options.width / 2);
+      var atop = this._options.top + (this._options.height / 2);
 
-      if ( aleft >= half ) {
+      if ( aleft >= hleft ) {
         var right = this._windowWidth - (this._options.left + this._options.width);
         this._options.left = null;
         this._options.right = right;
+      }
+
+      if ( atop >= htop ) {
+        var bottom = this._windowHeight - (this._options.top + this._options.height);
+        this._options.top = null;
+        this._options.bottom = bottom;
       }
     } else {
       this._options.width = obj.w;
@@ -330,6 +345,7 @@
     var opts = {
       left: null,
       right: null,
+      bottom: null,
       top: this._options.top,
       width: this._options.width,
       height: this._options.height
@@ -339,6 +355,12 @@
       opts.right = this._options.right;
     } else {
       opts.left = this._options.left;
+    }
+
+    if ( this._options.bottom ) {
+      opts.bottom = this._options.bottom;
+    } else {
+      opts.top = this._options.top;
     }
 
     this._settings.set(null, opts, true);
@@ -403,7 +425,12 @@
       left = this._windowWidth - this._options.right - this._options.width;
     }
 
-    return {x: left, y: this._options.top};
+    var top = this._options.top;
+    if ( this._options.bottom ) {
+      top = this._windowHeight - this._options.bottom - this._options.height;
+    }
+
+    return {x: left, y: top};
   };
 
   /**
@@ -434,4 +461,4 @@
   OSjs.Applications.CoreWM = OSjs.Applications.CoreWM || {};
   OSjs.Applications.CoreWM.Widget = Widget;
 
-})(OSjs.Core.WindowManager, OSjs.Core.Window, OSjs.GUI, OSjs.Utils, OSjs.API, OSjs.VFS);
+})(OSjs.Core.Window, OSjs.GUI, OSjs.Utils, OSjs.API, OSjs.VFS);
